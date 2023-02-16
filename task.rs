@@ -1,3 +1,4 @@
+#[derive(Debug)]
 struct Task {
     topic: String,
     text: String,
@@ -24,16 +25,26 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mut tasks: Vec<Task> = res.unwrap().split('\n').filter(|line| line.len() != 0).map(|line| {
+    let content = res.unwrap();
+    let lines = content.split('\n').filter(|line| line.len() != 0).map(|line| {
         let by_colon: Vec<&str> = line.split(": ").collect::<Vec<&str>>();
-        let by_dash: Vec<&str> = by_colon[1].split(" - ").collect::<Vec<&str>>();
-        Task { 
-            topic: String::from(by_colon[0]),
-            text: String::from(by_dash[0]),
-            priority: by_dash[1].parse().unwrap()
+        if by_colon.len() != 2 {
+            return Err(format!("'{}' does not match format 'topic: text - priority'", line));
         }
-    }).collect();
+        let by_dash: Vec<&str> = by_colon[1].split(" - ").collect::<Vec<&str>>();
+        if by_dash.len() != 2 {
+            return Err(format!("'{}' does not match format 'text - priority'", by_colon[1]));
+        }
+        match by_dash[1].parse::<u8>() {
+            Ok(v) => Ok(Task { topic: String::from(by_colon[0]), text: String::from(by_dash[0]), priority: v }),
+            Err(e) => Err(format!("could not parse '{}': {}", by_dash[1], e)),
+        }
+    });
 
+    lines.clone().filter(|res| res.is_err()).map(|res| res.unwrap_err()).for_each(|err| eprintln!("{}", err));
+
+    let mut tasks: Vec<Task> = lines.filter(|res| res.is_ok()).map(|res| res.unwrap()).collect();
     tasks.sort_by(|a, b| a.priority.cmp(&b.priority));
-    tasks.iter().for_each(|task| println!("{}", task));
+    println!("tasks:");
+    tasks.iter().enumerate().for_each(|(i, task)| println!("[{}] {}", i, task));
 }
