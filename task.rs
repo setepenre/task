@@ -66,7 +66,6 @@ fn write_tasks(tasks: &Vec<Task>, filepath: &String) -> std::io::Result<()> {
 
 fn list(mut tasks: Vec<Task>) {
     tasks.sort_by(|a, b| a.priority.cmp(&b.priority));
-    println!("tasks:");
     tasks.iter().enumerate().for_each(|(i, task)| println!("[{}] {}", i, task));
 }
 
